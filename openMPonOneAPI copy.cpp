@@ -241,8 +241,8 @@ void* coo_multiply_vector_pthread1(void *parm){
     struct timeval val,newVal;
     gettimeofday(&val, NULL);
     threadParm_t *p = (threadParm_t *) parm;
-    int id = p->threadId;
-    int seg=nozerorows/THREAD_NUM;
+    int id = p->threadId;//表示线程编号
+    int seg=nozerorows/THREAD_NUM;//稠密度
     for(int i=index[seg*id];i<index[seg*(id+1)];i++){
         yy[row[i]] += value[i] * vec[col[i]];
     }
@@ -257,12 +257,12 @@ pthread_mutex_t  mutex_task;
 void* coo_multiply_vector_pthread2(void *parm){
     threadParm_t *p = (threadParm_t *) parm;
     int id = p->threadId;
-    int task = 0;
+    int task = 0;//表示当前任务数量
 
     while(1){
-        pthread_mutex_lock(&mutex_task);
+        pthread_mutex_lock(&mutex_task);//线程互斥上锁
         task = next_arr++;
-        pthread_mutex_unlock(&mutex_task);
+        pthread_mutex_unlock(&mutex_task);//线程互斥解锁
         if (task >= nozerorows) break;
         for(int i=index[task];i<index[task+1];i++){
             yyy[row[i]] += value[i] * vec[col[i]];
@@ -276,8 +276,8 @@ void* coo_multiply_vector_pthread2(void *parm){
 ///第一种实现的是在外层进行划分
 void* coo_multiply_matrix_pthread1(void *parm){
     threadParm_t *p = (threadParm_t *) parm;
-    int id = p->threadId;
-    int interval=nozerorows/THREAD_NUM;
+    int id = p->threadId;//进程号
+    int interval=nozerorows/THREAD_NUM;//间隔的设定
     int maxx=0;
     if(id==3){
         maxx=nonzeros;
@@ -289,7 +289,7 @@ void* coo_multiply_matrix_pthread1(void *parm){
     for(int i=index[interval*id];i<maxx;i++){//计算的index[]是从row的i行到i+interval行
         for(int k=0;k<n;k++)
             mat_res1[row[i]][k] += value[i] * mat_nonsparse[col[i]][k];
-    }
+    }//外层循环的设定
     pthread_exit(NULL);
 }
 ///第二种方法是在内层进行划分
@@ -309,7 +309,7 @@ void* coo_multiply_matrix_pthread2(void *parm){
     //for(int i=index[interval*id];i<maxx;i++){//计算的index[]是从row的i行到i+interval行
     for(int k=interval*id;k<maxx;k++)
         mat_res1[row[i]][k] += value[i] * mat_nonsparse[col[i]][k];
-    //}
+    //内层循环}
     pthread_exit(NULL);
 }
 
@@ -327,7 +327,7 @@ void* coo_multiply_matrix_pthread4(void *parm){
         task = next_arr2;
         next_arr2+=single_circle;
         pthread_mutex_unlock(&mutex_task);
-        if (task >= nozerorows) break;
+        if (task >= nozerorows) break;//退出
         if(task>=nozerorows-single_circle)maxx=nonzeros;
         else maxx=index[task+single_circle];
         for(int i=index[task];i<maxx;i++){
@@ -419,13 +419,13 @@ void* coo_multiply_matrix_pthread_sse1(void *parm){
 double spMV_pThread_static(int thread_num){
     THREAD_NUM=thread_num;
     struct timeval val,newVal;
-    gettimeofday(&val, NULL);
+    gettimeofday(&val, NULL);//获取时间
     pthread_t thread[THREAD_NUM];
     threadParm_t threadParm[THREAD_NUM];
     for (int i = 0; i < THREAD_NUM; i++)
     {
       threadParm[i].threadId = i;
-      pthread_create(&thread[i], nullptr, coo_multiply_vector_pthread1, (void *)&threadParm[i]);
+      pthread_create(&thread[i], nullptr, coo_multiply_vector_pthread1, (void *)&threadParm[i]);//创造线程
     }
 
     for (int i = 0; i < THREAD_NUM; i++)
